@@ -1,5 +1,6 @@
 import os
 import sys
+import argparse
 
 from src.logger import create_logger
 from src.data.dictionary import Dictionary
@@ -7,19 +8,31 @@ from src.data.dictionary import Dictionary
 if __name__ == '__main__':
     logger = create_logger(None)
 
-    src_voc_path = 'data_v2_20190408/dict.reptag.bpe.cn2en'
-    src_txt_path = 'data_v2_20190408/train.reptag.bpe.cn'
-    tgt_voc_path = 'data_v2_20190408/dict.reptag.bpe.cn2en'
-    tgt_txt_path = 'data_v2_20190408/train.reptag.bpe.en'
+    parser = argparse.ArgumentParser()
 
-    bin_path = 'data/reptag.bin'
-    assert os.path.isfile(src_voc_path)
+    parser.add_argument("--src_path", type=str, help="Path of source corpus")
+    parser.add_argument("--tgt_path", type=str, help="Path of target corpus")
+    parser.add_argument("--src_vocab", type=str, help="Path of source vocab")
+    parser.add_argument("--tgt_vocab", type=str, help="Path of target vocab")
+    parser.add_argument("--data_output", type=str, help="Path of data output")
+
+    args = parser.parse_args()
+
+    src_txt_path = args.src_path
+    tgt_txt_path = args.tgt_path
+    src_voc_path = args.src_vocab
+    tgt_voc_path = args.tgt_vocab
+    bin_path = args.data_output
+
     assert os.path.isfile(src_txt_path)
-    assert os.path.isfile(tgt_voc_path)
     assert os.path.isfile(tgt_txt_path)
+    assert os.path.isfile(src_voc_path)
+    assert os.path.isfile(tgt_voc_path)
 
     src_dico = Dictionary.read_vocab(src_voc_path)
+    logger.info("length of source_dic: %i" %(len(src_dico)))
     tgt_dico = Dictionary.read_vocab(tgt_voc_path)
+    logger.info("length of target_dic: %i" %(len(tgt_dico)))
 
     data = Dictionary.index_data(src_txt_path, tgt_txt_path, src_dico, tgt_dico, bin_path)
     if data is None:

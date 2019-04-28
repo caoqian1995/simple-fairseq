@@ -7,8 +7,7 @@ from src.data.loader import load_data
 import subprocess
 import re
 
-logger = create_logger('translate_raw.log')
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+logger = create_logger(None)
 
 parser = argparse.ArgumentParser(description='Settings')
 parser.add_argument("--train_data", type=str, default='data/raw.bin',
@@ -68,17 +67,24 @@ parser.add_argument("--length_penalty", type=float, default=1.0,
                     help="length penalty")
 parser.add_argument("--clip_grad_norm", type=float, default=5.0,
                     help="clip grad norm")
+
+parser.add_argument("--gpu_num", type=int, default=1,
+                    help="gpu num")
+parser.add_argument("--seed", type=int, default=1234,
+                    help="seed")
+parser.add_argument("--translate_file", type=str,
+                    help="translated file")
+parser.add_argument("--src_dico_file", type=str,
+                    help="source dictionary")
+parser.add_argument("--tgt_dico_file", type=str,
+                    help="target dictionary")
+
 parser.add_argument("--id",type=int, default=0)
-parser.add_argument("--checkpoint_dir", type=str, default='all_models/raw')
+parser.add_argument("--checkpoint_dir", type=str, default='output')
 params = parser.parse_args()
-params.gpu_num = 1
-params.seed = 1234
-params.reload_model = '{}/model_epoch{}.pt'.format(params.checkpoint_dir, params.id)
-params.translate_file = 'data/nist06.raw.bpe.cn'
-params.src_dico_file = 'data/dict.raw.bpe.cn'
-params.tgt_dico_file = 'data/dict.raw.bpe.en'
-params.out_file = '{}/predict_{}.en'.format(params.checkpoint_dir, params.id)
 if __name__ == '__main__':
+    params.reload_model = '{}/model_epoch{}.pt'.format(params.checkpoint_dir, params.id)
+    params.out_file = '{}/predict_{}.en'.format(params.checkpoint_dir, params.id)
     data = load_data(params, name='test')
     encoder, decoder, _ = build_mt_model(params)
     encoder.eval()
@@ -98,13 +104,13 @@ if __name__ == '__main__':
             for j in range(len2.size(0)):
                 file.write(params.tgt_dico.idx2string(sent2[:, j]).replace('@@ ', '')+'\n')
 
-    command = 'perl multi-bleu-detok.perl data/valid.bpe.en < {}'.format(params.out_file)
-    p = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
-    result = p.communicate()[0].decode("utf-8")
-    bleu = re.findall(r"BLEU = (.+?),", result)[0]
-    print(bleu)
-    logger.info(result)
-    file.close()
-    with open('{}/bleu.log'.format(params.checkpoint_dir),'a+') as f:
-        f.write(str(params.id)+' '+result)
+    #command = 'perl multi-bleu-detok.perl data/valid.bpe.en < {}'.format(params.out_file)
+    #p = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
+    #result = p.communicate()[0].decode("utf-8")
+    #bleu = re.findall(r"BLEU = (.+?),", result)[0]
+    #print(bleu)
+    #logger.info(result)
+    #file.close()
+    #with open('{}/bleu.log'.format(params.checkpoint_dir),'a+') as f:
+    #    f.write(str(params.id)+' '+result)
 
