@@ -1,39 +1,34 @@
 import argparse
-import torch
 from src.logger import create_logger
 import os
-from src.model import build_mt_model
-from src.data.loader import load_data
-import subprocess
-import re
-
+import torch
 logger = create_logger(None)
 
 parser = argparse.ArgumentParser(description='Settings')
-parser.add_argument("--train_data", type=str, default='data/raw.bin',
+parser.add_argument("--train_data", type=str, 
                     help="train data dir")
-parser.add_argument("--max_len", type=int, default=50,
+parser.add_argument("--max_len", type=int, default=105,
                     help="max length of sentences")
 parser.add_argument("--reload_model", type=str, default='',
                     help="reload model")
-parser.add_argument("--batch_size", type=int, default=128,
-                    help="batch size")
+parser.add_argument("--batch_size", type=int, default=80,
+                    help="batch size sentences")
 parser.add_argument("--batch_size_tokens", type=int, default=-1,
                     help="batch size tokens")
 parser.add_argument("--src_n_words", type=int, default=0,
                     help="data")
 parser.add_argument("--tgt_n_words", type=int, default=0,
                     help="data")
-parser.add_argument("--dropout", type=float, default=0,
+parser.add_argument("--dropout", type=float, default=0.1,
                     help="Dropout")
-parser.add_argument("--label-smoothing", type=float, default=0,
+parser.add_argument("--label-smoothing", type=float, default=0.1,
                     help="Label smoothing")
 parser.add_argument("--attention", type=bool, default=True,
                     help="Use an attention mechanism")
 parser.add_argument("--transformer", type=bool, default=True,
                     help="Use Transformer")
 parser.add_argument("--lstm", type=bool, default=False,
-                    help="Use LSTM")
+                    help="Use Transformer")
 parser.add_argument("--emb_dim", type=int, default=512,
                     help="Embedding layer size")
 parser.add_argument("--n_enc_layers", type=int, default=6,
@@ -67,50 +62,26 @@ parser.add_argument("--length_penalty", type=float, default=1.0,
                     help="length penalty")
 parser.add_argument("--clip_grad_norm", type=float, default=5.0,
                     help="clip grad norm")
+parser.add_argument("--update_freq", type=int, default=1)
+parser.add_argument("--optim", type=str, default="adam_inverse_sqrt,lr=0.001")
+parser.add_argument("--gpu_num", type=int, default=1)
 
-parser.add_argument("--gpu_num", type=int, default=1,
-                    help="gpu num")
-parser.add_argument("--seed", type=int, default=1234,
-                    help="seed")
-parser.add_argument("--translate_file", type=str,
-                    help="translated file")
-parser.add_argument("--src_dico_file", type=str,
-                    help="source dictionary")
-parser.add_argument("--tgt_dico_file", type=str,
-                    help="target dictionary")
+parser.add_argument("--checkpoint_dir", type=str, default="output")
+parser.add_argument("--seed", type=int, default=1234)
+parser.add_argument("--max_epoch", type=int, default=35)
 
-parser.add_argument("--id",type=int, default=0)
-parser.add_argument("--checkpoint_dir", type=str, default='output')
-params = parser.parse_args()
+
+
 if __name__ == '__main__':
-    params.reload_model = '{}/model_epoch{}.pt'.format(params.checkpoint_dir, params.id)
-    params.out_file = '{}/predict_{}.en'.format(params.checkpoint_dir, params.id)
-    data = load_data(params, name='test')
-    encoder, decoder, _ = build_mt_model(params)
-    encoder.eval()
-    decoder.eval()
-    iterator = data.get_iterator(shuffle=False, group_by_size=False)()
-    file = open(params.out_file, 'w',encoding='utf-8')
-    total = 0
-    with torch.no_grad():
-        for (sen1, len1) in iterator:
-            #len1, bak_order = len1.sort(descending=True)
-            #sen1 = sen1[:,bak_order]
-            sen1 = sen1.cuda()
-            encoded = encoder(sen1, len1)
-            sent2, len2, _ = decoder.generate(encoded)
-            total += len2.size(0)
-            logger.info('Translating %i sentences.' % total)
-            for j in range(len2.size(0)):
-                file.write(params.tgt_dico.idx2string(sent2[:, j]).replace('@@ ', '')+'\n')
+    params = parser.parse_args()
 
-    #command = 'perl multi-bleu-detok.perl data/valid.bpe.en < {}'.format(params.out_file)
-    #p = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
-    #result = p.communicate()[0].decode("utf-8")
-    #bleu = re.findall(r"BLEU = (.+?),", result)[0]
-    #print(bleu)
-    #logger.info(result)
-    #file.close()
-    #with open('{}/bleu.log'.format(params.checkpoint_dir),'a+') as f:
-    #    f.write(str(params.id)+' '+result)
+    if params.gpu_num == 1:
+        from single_train import main
+        main(params)
+    else:
+        from multiprocessing_train import main
+        logger.info('GPU numbers: %s',params.gpu_num)
+        main(params)
+
+
 
