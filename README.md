@@ -2,14 +2,14 @@
 support run on a single gpu
 multi-gpus hava bug now!
 
-##Preprocess
+## Preprocess
 
 ./run_preprocess.sh
 
-##Train
+## Train
 
 ./run_train.sh
 
-##Translate
+## Translate
 
 ./run_translate.sh ${model_id}
