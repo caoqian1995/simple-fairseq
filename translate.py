@@ -59,7 +59,7 @@ parser.add_argument("--decoder_normalize_before", type=bool, default=False,
                     help="decoder_normalize_before")
 parser.add_argument("--share_encdec_emb", type=bool, default=False,
                     help="share encoder and decoder embedding")
-parser.add_argument("--share_decpro_emb", type=bool, default=False,
+parser.add_argument("--share_decpro_emb", type=bool, default=True,
                     help="share decoder input and project embedding")
 parser.add_argument("--beam_size", type=int, default=6,
                     help="beam search size")
@@ -79,12 +79,17 @@ parser.add_argument("--src_dico_file", type=str,
 parser.add_argument("--tgt_dico_file", type=str,
                     help="target dictionary")
 
+parser.add_argument("--best_model", type=bool, default=False)
 parser.add_argument("--id",type=int, default=0)
 parser.add_argument("--checkpoint_dir", type=str, default='output')
 params = parser.parse_args()
 if __name__ == '__main__':
-    params.reload_model = '{}/model_epoch{}.pt'.format(params.checkpoint_dir, params.id)
-    params.out_file = '{}/predict_{}.en'.format(params.checkpoint_dir, params.id)
+    if params.best_model:
+        params.reload_model = '{}/model_best.pt'.format(params.checkpoint_dir)
+        params.out_file = '{}/predict_best.en'.format(params.checkpoint_dir)
+    else:
+        params.reload_model = '{}/model_epoch{}.pt'.format(params.checkpoint_dir, params.id)
+        params.out_file = '{}/predict_{}.en'.format(params.checkpoint_dir, params.id)
     data = load_data(params, name='test')
     encoder, decoder, _ = build_mt_model(params)
     encoder.eval()

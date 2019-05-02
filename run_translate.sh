@@ -1,18 +1,21 @@
 #!/bin/bash
 
-if [ $# != 1 ];then
-	echo "uasge: $0 id"
+if [ $# != 2 ];then
+	echo "uasge: $0 test_file"
 	exit
 fi
 
-id=$1
+TEST_FILE=$1
+CHECKPOINT_DIR=./output
+SRC_DICO_FILE=./data/vocab.cn
+TGT_DICO_FILE=./data/vocab.en
 
-CUDA_VISIBLE_DEVICES=1 \
-	nohup python translate.py --translate_file data/nist06.cn \
+CUDA_VISIBLE_DEVICES=3 \
+	nohup python translate.py --translate_file ${TEST_FILE} \
                               --seed 1234 \
-                              --src_dico_file data/dict.cn.txt \
-                              --tgt_dico_file data/dict.en.txt \
-							  --checkpoint_dir output \
-							  --id ${id}
+                              --src_dico_file ${SRC_DICO_FILE} \
+                              --tgt_dico_file ${TGT_DICO_FILE} \
+							  --checkpoint_dir ${CHECKPOINT_DIR} \
+							  --best_model True \
                               --gpu_num 1 > log.translate &
 
